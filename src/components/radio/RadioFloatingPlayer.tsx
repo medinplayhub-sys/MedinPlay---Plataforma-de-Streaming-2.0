@@ -13,18 +13,16 @@ export const RadioFloatingPlayer: React.FC<RadioFloatingPlayerProps> = ({
   onClose,
   onOpenRadioSection,
 }) => {
-  if (!station) return null;
-
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && station?.streamUrl) {
       audioRef.current.play().catch(() => setIsPlaying(false));
     }
-  }, [station.streamUrl]);
+  }, [station?.streamUrl]);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -47,6 +45,8 @@ export const RadioFloatingPlayer: React.FC<RadioFloatingPlayerProps> = ({
       setIsMuted(val === 0);
     }
   };
+
+  if (!station) return null;
 
   return (
     <div className="fixed bottom-14 lg:bottom-4 right-2 sm:right-6 z-40 bg-[#0d121f]/95 border border-cyan-500/30 rounded-2xl shadow-2xl p-3 backdrop-blur-2xl max-w-sm sm:max-w-md w-full flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300">

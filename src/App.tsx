@@ -40,7 +40,10 @@ import { AISearchModal } from './components/modals/AISearchModal';
 import { SubscriptionModal } from './components/modals/SubscriptionModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { PushNotificationsModal } from './components/modals/PushNotificationsModal';
+import { CastToTVModal } from './components/modals/CastToTVModal';
+import { DownloadAppsModal } from './components/modals/DownloadAppsModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { CastDevice } from './types';
 
 export default function App() {
   // Navigation & Platform State
@@ -65,6 +68,11 @@ export default function App() {
 
   // Active Radio State (Background Audio)
   const [activeRadioStation, setActiveRadioStation] = useState<RadioStation | null>(null);
+
+  // Cast & Download Modal States
+  const [isCastModalOpen, setIsCastModalOpen] = useState(false);
+  const [isDownloadAppsOpen, setIsDownloadAppsOpen] = useState(false);
+  const [activeCastDevice, setActiveCastDevice] = useState<CastDevice | null>(null);
 
   // Modals Open State
   const [isAISearchOpen, setIsAISearchOpen] = useState(false);
@@ -540,10 +548,14 @@ export default function App() {
           activeProfile={activeProfile}
           onSwitchProfile={handleSwitchProfile}
           onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenSearch={() => setIsAISearchOpen(true)}
           onOpenAISearch={() => setIsAISearchOpen(true)}
           onOpenSubscription={() => setIsSubscriptionOpen(true)}
           onOpenNotifications={() => setIsNotificationsOpen(true)}
           onOpenAdmin={() => setIsAdminOpen(true)}
+          onOpenCast={() => setIsCastModalOpen(true)}
+          onOpenDownloadApps={() => setIsDownloadAppsOpen(true)}
+          activeCastDevice={activeCastDevice}
           unreadNotificationsCount={unreadNotificationsCount}
         />
 
@@ -566,7 +578,7 @@ export default function App() {
 
           {activeSection === 'movies' && (
             <MoviesSeriesSection
-              type="movies"
+              filterType="movie"
               catalog={catalog.filter((c) => c.type === 'movie')}
               activeProfile={activeProfile}
               onPlayItem={handlePlayItem}
@@ -577,7 +589,7 @@ export default function App() {
 
           {activeSection === 'series' && (
             <MoviesSeriesSection
-              type="series"
+              filterType="series"
               catalog={catalog.filter((c) => c.type === 'series')}
               activeProfile={activeProfile}
               onPlayItem={handlePlayItem}
@@ -602,7 +614,7 @@ export default function App() {
             />
           )}
 
-          {activeSection === 'adult' && (
+          {(activeSection === 'adult18' || (activeSection as any) === 'adult') && (
             <Adult18Section
               catalog={catalog}
               iptvChannels={iptvChannels}
@@ -631,29 +643,47 @@ export default function App() {
           <RadioFloatingPlayer
             station={activeRadioStation}
             onClose={() => setActiveRadioStation(null)}
+            onOpenRadioSection={() => setActiveSection('radio')}
           />
         )}
 
         {/* Universal Stream Player Modal (Movies, Series, IPTV, DASH, HLS, MP4, YouTube) */}
-        {isPlayerOpen && activeStreamItem && (
-          <StreamPlayerModal
-            item={activeStreamItem}
-            activeProfile={activeProfile}
-            allCatalog={catalog}
-            onClose={() => {
-              setIsPlayerOpen(false);
-              setActiveStreamItem(null);
-            }}
-            onUpdateProgress={(progressSec, totalSec) => {
-              if ('type' in activeStreamItem && activeStreamItem.type !== undefined) {
-                handleUpdateWatchProgress(activeStreamItem as ContentItem, progressSec, totalSec);
-              }
-            }}
-            onSelectRelated={(relatedItem) => {
-              setActiveStreamItem(relatedItem);
-            }}
-          />
-        )}
+        <StreamPlayerModal
+          isOpen={isPlayerOpen && activeStreamItem !== null}
+          item={activeStreamItem}
+          activeProfile={activeProfile}
+          catalog={catalog}
+          onClose={() => {
+            setIsPlayerOpen(false);
+            setActiveStreamItem(null);
+          }}
+          onPlayItem={(relatedItem) => {
+            setActiveStreamItem(relatedItem);
+          }}
+          onUpdateWatchProgress={(item, progressSec, totalSec) => {
+            handleUpdateWatchProgress(item, progressSec, totalSec);
+          }}
+          onToggleWatchlist={handleToggleWatchlist}
+          onToggleFavorite={handleToggleFavorite}
+          isFavorite={Boolean(activeStreamItem && activeProfile.favorites.includes(activeStreamItem.id))}
+          isWatchlisted={Boolean(activeStreamItem && activeProfile.watchlist.includes(activeStreamItem.id))}
+        />
+
+        {/* Cast to Smart TV Modal */}
+        <CastToTVModal
+          isOpen={isCastModalOpen}
+          onClose={() => setIsCastModalOpen(false)}
+          currentItem={activeStreamItem || activeRadioStation}
+          activeCastDevice={activeCastDevice}
+          onConnectCast={(device) => setActiveCastDevice(device)}
+          onDisconnectCast={() => setActiveCastDevice(null)}
+        />
+
+        {/* Download Apps Modal (Android APK, iOS Web Clip, Android TV, Smart TV) */}
+        <DownloadAppsModal
+          isOpen={isDownloadAppsOpen}
+          onClose={() => setIsDownloadAppsOpen(false)}
+        />
 
         {/* AI Neural Curator & Search Modal */}
         <AISearchModal

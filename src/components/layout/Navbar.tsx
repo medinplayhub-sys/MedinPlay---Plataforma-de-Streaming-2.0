@@ -109,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Center Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
@@ -117,21 +117,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => onSelectSection(item.id)}
-                  className={`relative flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                     isActive
                       ? 'bg-zinc-900 text-white border border-zinc-700 shadow-sm font-semibold'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
                   }`}
                 >
                   <Icon
-                    className={`w-3.5 h-3.5 ${
+                    className={`w-3.5 h-3.5 shrink-0 ${
                       isActive ? (item.id === 'adult18' ? 'text-red-400' : 'text-amber-400') : 'text-zinc-400'
                     }`}
                   />
                   <span>{item.label}</span>
                   {item.badge && (
                     <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-tighter ${
+                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-tighter shrink-0 ${
                         item.badge === 'EN VIVO' ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
                       }`}
                     >
@@ -144,12 +144,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Right Action Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Cast to TV Button */}
             {onOpenCast && (
               <button
                 onClick={onOpenCast}
-                className={`p-2 rounded-full transition-all relative ${
+                className={`p-2 rounded-full transition-all relative shrink-0 ${
                   activeCastDevice
                     ? 'bg-emerald-950/60 border border-emerald-500/50 text-emerald-400'
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800'
@@ -167,11 +167,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             {onOpenDownloadApps && (
               <button
                 onClick={onOpenDownloadApps}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-all"
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-all shrink-0"
                 title="Descargar Apps para Android, iOS y Smart TV"
               >
-                <Download className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[11px]">Apps</span>
+                <Download className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="text-[11px] whitespace-nowrap">Apps</span>
               </button>
             )}
 
@@ -181,21 +181,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* AI Smart Search Pill */}
             <button
               onClick={onOpenSearch}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-amber-500/50 hover:text-white text-xs font-medium transition-all group"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-amber-500/50 hover:text-white text-xs font-medium transition-all group shrink-0"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
-              <span className="hidden sm:inline">Búsqueda IA</span>
-              <Search className="w-3.5 h-3.5 text-zinc-400 sm:hidden" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">Búsqueda IA</span>
+              <Search className="w-3.5 h-3.5 text-zinc-400 sm:hidden shrink-0" />
             </button>
 
             {/* VIP Plan Badge */}
             <button
               onClick={onOpenSubscription}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-amber-400 hover:border-amber-500/50 text-xs font-semibold transition-all"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-amber-400 hover:border-amber-500/50 text-xs font-semibold transition-all shrink-0"
               title="Gestionar Suscripción"
             >
-              <Crown className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden xl:inline text-[11px]">
+              <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="hidden 2xl:inline text-[11px] whitespace-nowrap">
                 {account.subscription.planId === 'ultra' ? 'Ultra VIP 4K' : account.subscription.planName}
               </span>
             </button>
@@ -203,7 +203,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Notifications Bell */}
             <button
               onClick={onOpenNotifications}
-              className="relative p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-all"
+              className="relative p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-all shrink-0"
               title="Notificaciones Push"
             >
               <Bell className="w-4 h-4" />

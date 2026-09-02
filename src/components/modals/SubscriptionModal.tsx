@@ -28,8 +28,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   currentSubscription,
   onUpgradePlan,
 }) => {
-  if (!isOpen) return null;
-
   const [selectedPlanId, setSelectedPlanId] = useState<string>(currentSubscription.planId || 'ultra');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'gpay' | 'paypal' | 'crypto'>('card');
   const [cardNumber, setCardNumber] = useState('•••• •••• •••• 4242');
@@ -127,6 +125,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }, 1500);
     }, 1200);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">

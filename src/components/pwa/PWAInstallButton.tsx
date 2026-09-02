@@ -4,7 +4,7 @@ import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 interface PWAInstallButtonProps {
   className?: string;
-  variant?: 'navbar' | 'banner' | 'menu';
+  variant?: 'navbar' | 'banner' | 'menu' | 'compact';
 }
 
 export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
@@ -115,11 +115,12 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
     <>
       <button
         onClick={handleInstallClick}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-black font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95 ${className}`}
+        className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-black font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all active:scale-95 shrink-0 ${className}`}
         title="Instalar App MedinPlay en tu dispositivo"
       >
-        <Download className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-        <span className="tracking-tight whitespace-nowrap">Instalar App MedinPlay</span>
+        <Download className="w-3.5 h-3.5 text-black stroke-[2.5] shrink-0" />
+        <span className="tracking-tight whitespace-nowrap hidden lg:inline">Instalar App MedinPlay</span>
+        <span className="tracking-tight whitespace-nowrap lg:hidden">Instalar App</span>
       </button>
 
       {/* iOS Modal */}

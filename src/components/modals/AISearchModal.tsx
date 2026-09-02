@@ -33,8 +33,6 @@ export const AISearchModal: React.FC<AISearchModalProps> = ({
   activeProfile,
   onPlayItem,
 }) => {
-  if (!isOpen) return null;
-
   const [query, setQuery] = useState('');
   const [useDeepThinking, setUseDeepThinking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +60,8 @@ export const AISearchModal: React.FC<AISearchModalProps> = ({
   // Find matched items
   const matchedVOD = catalog.filter((c) => searchResult?.matchedContentIds.includes(c.id));
   const matchedIPTV = iptvChannels.filter((ch) => searchResult?.matchedContentIds.includes(ch.id));
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">

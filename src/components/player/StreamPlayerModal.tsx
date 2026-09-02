@@ -114,10 +114,8 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
   isFavorite = false,
   isWatchlisted = false,
 }) => {
-  if (!isOpen || !item) return null;
-
-  const isIPTV = 'channelNumber' in item;
-  const isSeries = !isIPTV && (item as ContentItem).type === 'series';
+  const isIPTV = item ? 'channelNumber' in item : false;
+  const isSeries = Boolean(item && !isIPTV && (item as ContentItem).type === 'series');
 
   // Video element & player state
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -145,7 +143,7 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
   // Current Episode for series
   const [currentEpisode, setCurrentEpisode] = useState<Episode | undefined>(
     initialEpisode ||
-      (isSeries && (item as ContentItem).seasons?.[0]?.episodes?.[0]
+      (isSeries && item && (item as ContentItem).seasons?.[0]?.episodes?.[0]
         ? (item as ContentItem).seasons![0].episodes[0]
         : undefined)
   );
@@ -189,7 +187,7 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
 
   // Real-time latency & bitrate stats HUD
   const [stats, setStats] = useState({
-    latencyMs: isIPTV ? (item as IPTVChannel).lowLatencyMs || 140 : 120,
+    latencyMs: isIPTV && item ? (item as IPTVChannel).lowLatencyMs || 140 : 120,
     bitrate: isIPTV ? '18.5 Mbps' : '24.2 Mbps',
     fps: 60,
     bufferHealth: '98%',
@@ -197,7 +195,9 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
   });
 
   // Determine current video stream URL
-  const currentVideoUrl = isIPTV
+  const currentVideoUrl = !item
+    ? ''
+    : isIPTV
     ? (item as IPTVChannel).streamUrl
     : currentEpisode
     ? currentEpisode.videoUrl
@@ -205,7 +205,9 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
 
   const embedInfo = getEmbedInfo(currentVideoUrl);
 
-  const contentTitle = isIPTV
+  const contentTitle = !item
+    ? ''
+    : isIPTV
     ? (item as IPTVChannel).name
     : isSeries && currentEpisode
     ? `${(item as ContentItem).title}: T${currentEpisode.seasonNumber}E${currentEpisode.episodeNumber} "${currentEpisode.title}"`
@@ -213,12 +215,14 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
 
   // Sequel content lookup
   const sequelItem =
-    !isIPTV && (item as ContentItem).sequelContentId
+    item && !isIPTV && (item as ContentItem).sequelContentId
       ? catalog.find((c) => c.id === (item as ContentItem).sequelContentId)
       : null;
 
   // Handle Autoplay & Listeners
   useEffect(() => {
+    if (!isOpen || !item) return;
+
     if (videoRef.current && !embedInfo.isEmbed) {
       videoRef.current.play().catch(() => {
         setIsPlaying(false);
@@ -238,7 +242,7 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [currentVideoUrl]);
+  }, [currentVideoUrl, isOpen, item]);
 
   const fetchAiCompanionInitial = async () => {
     setIsAiLoading(true);
@@ -392,6 +396,8 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
     }, 4500);
     setControlsTimeout(timeout);
   };
+
+  if (!isOpen || !item) return null;
 
   return (
     <div

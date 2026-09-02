@@ -55,8 +55,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onRegisterSuccess,
   onLogout,
 }) => {
-  if (!isOpen) return null;
-
   // Auth Modes: 'login' | 'register' | 'profiles' | 'devices'
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'profiles' | 'devices'>(
     !account.isAuthenticated ? 'login' : 'profiles'
@@ -255,6 +253,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setNewProfileName('');
     setShowAddProfileForm(false);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
