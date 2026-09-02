@@ -5,6 +5,7 @@ import {
   RadioStation,
   UserProfile,
 } from '../../types';
+import { PWAInstallButton } from '../pwa/PWAInstallButton';
 import {
   Play,
   Bookmark,
@@ -535,6 +536,11 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
           ))}
         </div>
       </section>
+
+      {/* PWA Install Banner */}
+      <div className="pt-2">
+        <PWAInstallButton variant="banner" />
+      </div>
     </div>
   );
 };

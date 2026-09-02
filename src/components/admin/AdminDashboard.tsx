@@ -91,6 +91,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddRadio,
   onDeleteRadio,
 }) => {
+  const isAuthorizedAdmin = account.email?.toLowerCase().trim() === 'medinplayhub@gmail.com';
+
   const [activeTab, setActiveTab] = useState<'analytics' | 'vod' | 'iptv' | 'radio' | 'users'>('vod');
 
   // VOD Creation / Edit State
@@ -464,6 +466,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // List of other movies to link as sequel
   const otherMovies = catalog.filter((c) => c.type === 'movie' && c.id !== editingId);
+
+  // Security Access Guard for medinplayhub@gmail.com
+  if (!isAuthorizedAdmin) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="bg-[#0b0e17] border border-rose-500/50 w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-5 relative">
+          <button
+            onClick={onClose}
+            className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="w-16 h-16 rounded-3xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto shadow-lg shadow-rose-500/20">
+            <ShieldCheck className="w-8 h-8 text-rose-400" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Acceso Exclusivo de Administrador</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              El panel de administración, gestión de contenidos VOD, IPTV y servidores está restringido únicamente a la cuenta maestra:
+            </p>
+            <div className="p-2.5 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs font-mono font-bold text-rose-300">
+              medinplayhub@gmail.com
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Cuenta actual: <strong className="text-slate-300">{account.email || 'Invitado no autenticado'}</strong>
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-rose-500/20"
+          >
+            Volver a la Plataforma
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">

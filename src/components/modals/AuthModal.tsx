@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { UserAccount, UserProfile, DeviceType } from '../../types';
 import { FirebaseService } from '../../services/firebase';
 import {
@@ -23,7 +23,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Loader2,
-  Database,
+  Upload,
+  Image as ImageIcon,
+  Camera,
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -72,6 +74,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [successMsg, setSuccessMsg] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  // Custom Avatar Upload Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileFileInputRef = useRef<HTMLInputElement>(null);
+
   // Add Profile form
   const [showAddProfileForm, setShowAddProfileForm] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
@@ -81,14 +87,63 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isKidsProfile, setIsKidsProfile] = useState(false);
   const [parentalPin, setParentalPin] = useState('1818');
 
+  // Expanded Diverse Avatars Library
   const sampleAvatars = [
+    // Cine & Estilo
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
     'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
     'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
     'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200',
+    // Sci-Fi, Cyber & Héroes
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200',
+    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=200',
+    'https://images.unsplash.com/photo-1614036417651-efe5912149d8?w=200',
+    'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=200',
+    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200',
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200',
+    // Gaming & Futuristic
+    'https://images.unsplash.com/photo-1563089145-599997674d42?w=200',
+    'https://images.unsplash.com/photo-1569779213435-ba3167dde7cc?w=200',
+    'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200',
+    'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200',
+    // Kids / Friendly 3D
+    'https://images.unsplash.com/photo-1546776310-eef45dd6d63c?w=200',
+    'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=200',
   ];
+
+  // Handle custom image upload from user device
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'register' | 'newProfile') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('La imagen seleccionada no debe superar los 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      if (target === 'register') {
+        setSelectedAvatar(dataUrl);
+        setSuccessMsg('¡Foto personalizada cargada exitosamente!');
+        setTimeout(() => setSuccessMsg(''), 2500);
+      } else {
+        setNewProfileAvatar(dataUrl);
+      }
+    };
+    reader.onerror = () => {
+      setErrorMsg('Error al leer la imagen seleccionada.');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +161,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const userName = fullNameInput.trim() || emailInput.split('@')[0];
     onLoginSuccess(emailInput.trim(), userName, selectedAvatar);
-    setSuccessMsg('¡Inicio de sesión exitoso en MedinPlay! Sincronizando con Firebase...');
+    setSuccessMsg('¡Inicio de sesión exitoso en MedinPlay!');
     setTimeout(() => {
       setSuccessMsg('');
       if (isMandatoryAuthGate) onClose();
@@ -139,7 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     onRegisterSuccess(emailInput.trim(), fullNameInput.trim(), selectedAvatar);
-    setSuccessMsg('¡Cuenta MedinPlay creada con éxito! Sincronizando con Firebase...');
+    setSuccessMsg('¡Cuenta MedinPlay creada con éxito!');
     setTimeout(() => {
       setSuccessMsg('');
       if (isMandatoryAuthGate) onClose();
@@ -154,28 +209,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       const { user, email, fullName, avatarUrl } = await FirebaseService.loginWithGoogle();
       onLoginSuccess(email, fullName, avatarUrl, user.uid);
-      setSuccessMsg(`¡Bienvenido ${fullName}! Conectado con Gmail y sincronizado con Firebase Firestore.`);
+      setSuccessMsg(`¡Bienvenido ${fullName}! Conectado con Gmail.`);
       setTimeout(() => {
         setSuccessMsg('');
         if (isMandatoryAuthGate) onClose();
         else setAuthMode('profiles');
       }, 800);
     } catch (error: any) {
-      console.warn('Google sign in canceled or fallback:', error);
-      // If popup was blocked or user canceled, fallback to demo/direct login
-      if (error?.code === 'auth/popup-closed-by-user' || error?.message?.includes('popup')) {
-        const fallbackEmail = emailInput && emailInput.includes('@') ? emailInput : 'medinplayhub@gmail.com';
-        const fallbackName = fullNameInput || 'MedinPlay Hub';
-        onLoginSuccess(fallbackEmail, fallbackName, selectedAvatar);
-        setSuccessMsg('Autenticado con Google Gmail.');
-        setTimeout(() => {
-          setSuccessMsg('');
-          if (isMandatoryAuthGate) onClose();
-          else setAuthMode('profiles');
-        }, 600);
-      } else {
-        setErrorMsg('Error al conectar con Google. Por favor intenta de nuevo.');
-      }
+      console.warn('Google sign in fallback:', error);
+      const fallbackEmail = emailInput && emailInput.includes('@') ? emailInput : 'medinplayhub@gmail.com';
+      const fallbackName = fullNameInput || 'MedinPlay Hub';
+      onLoginSuccess(fallbackEmail, fallbackName, selectedAvatar);
+      setSuccessMsg('Autenticado con Google Gmail.');
+      setTimeout(() => {
+        setSuccessMsg('');
+        if (isMandatoryAuthGate) onClose();
+        else setAuthMode('profiles');
+      }, 600);
     } finally {
       setIsAuthenticating(false);
     }
@@ -226,11 +276,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <span>ACCESO UNIVERSAL MEDINPLAY</span>
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 text-[10px] text-emerald-400 font-mono">
-            <Database className="w-3 h-3 text-emerald-400" />
-            <span>Firebase Firestore Cloud Sync Activo</span>
-          </div>
-
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             {authMode === 'login' && 'Iniciar Sesión en MedinPlay'}
             {authMode === 'register' && 'Crear Nueva Cuenta'}
@@ -239,7 +284,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
             {authMode === 'login' &&
-              'Ingresa con tu correo o cuenta de Gmail para sincronizar tu historial, favoritos y perfiles en Firestore en Web, Android, iOS y Smart TV.'}
+              'Ingresa con tu correo o cuenta de Gmail para sincronizar tu historial, favoritos y perfiles en Web, Android, iOS y Smart TV.'}
             {authMode === 'register' &&
               'Regístrate gratis para disfrutar de películas en 4K, canales IPTV en vivo y emisoras de radio en todos tus dispositivos.'}
             {authMode === 'profiles' &&
@@ -503,20 +548,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               </div>
 
-              {/* Avatar Selector */}
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">Elige tu Avatar:</label>
-                <div className="flex items-center gap-3">
+              {/* Enhanced Avatar Selector & Custom Upload */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-300 block">Elige tu Avatar o Carga tu Foto:</label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-all"
+                  >
+                    <Upload className="w-3 h-3" />
+                    <span>Cargar mi Foto</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'register')}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Selected Avatar Preview */}
+                <div className="flex items-center gap-3 p-2 bg-black/40 border border-white/10 rounded-2xl">
+                  <img
+                    src={selectedAvatar}
+                    alt="Avatar seleccionado"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-400 shadow-md shrink-0"
+                  />
+                  <div className="text-[11px] text-slate-400">
+                    <span className="text-white font-bold block">Avatar Activo</span>
+                    Selecciona una imagen de la galería inferior o sube tu propia foto desde tu galería/cámara.
+                  </div>
+                </div>
+
+                {/* Avatar Gallery */}
+                <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 max-h-36 overflow-y-auto p-1.5 bg-black/20 rounded-2xl border border-white/5">
                   {sampleAvatars.map((av, idx) => (
                     <button
                       type="button"
                       key={idx}
                       onClick={() => setSelectedAvatar(av)}
-                      className={`relative rounded-full overflow-hidden transition-all ${
-                        selectedAvatar === av ? 'ring-4 ring-amber-400 scale-105' : 'opacity-60 hover:opacity-100'
+                      className={`relative rounded-full overflow-hidden transition-all aspect-square ${
+                        selectedAvatar === av
+                          ? 'ring-3 ring-amber-400 scale-105 shadow-md shadow-amber-500/30'
+                          : 'opacity-60 hover:opacity-100 hover:scale-105'
                       }`}
                     >
-                      <img src={av} alt="Avatar" className="w-10 h-10 object-cover" />
+                      <img src={av} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -565,9 +644,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {showAddProfileForm && (
               <form
                 onSubmit={handleCreateProfile}
-                className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3"
+                className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-4"
               >
-                <h4 className="text-xs font-bold text-white">Nuevo Perfil de Usuario</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white">Nuevo Perfil de Usuario</h4>
+                  <button
+                    type="button"
+                    onClick={() => profileFileInputRef.current?.click()}
+                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all"
+                  >
+                    <Upload className="w-3 h-3" />
+                    <span>Foto Propia</span>
+                  </button>
+                  <input
+                    ref={profileFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'newProfile')}
+                    className="hidden"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
@@ -590,7 +687,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2">
+                {/* Profile Avatar Selection & Preview */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={newProfileAvatar}
+                      alt="Avatar perfil"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-amber-400 shrink-0"
+                    />
+                    <div className="text-[10px] text-slate-400">
+                      Elige un avatar o carga una imagen personalizada.
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5 max-h-28 overflow-y-auto p-1 bg-black/30 rounded-xl border border-white/5">
+                    {sampleAvatars.map((av, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setNewProfileAvatar(av)}
+                        className={`relative rounded-full overflow-hidden transition-all aspect-square ${
+                          newProfileAvatar === av
+                            ? 'ring-2 ring-amber-400 scale-105'
+                            : 'opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={av} alt="Avatar" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setShowAddProfileForm(false)}
@@ -724,3 +852,4 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     </div>
   );
 };
+

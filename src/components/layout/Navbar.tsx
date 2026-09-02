@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppSection, PlatformViewMode, UserAccount, UserProfile, CastDevice } from '../../types';
+import { PWAInstallButton } from '../pwa/PWAInstallButton';
 import {
   Film,
   Tv,
@@ -21,6 +22,7 @@ import {
   Home,
   Cast,
   Download,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -172,6 +174,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-[11px]">Apps</span>
               </button>
             )}
+
+            {/* PWA Install Button Header */}
+            <PWAInstallButton variant="compact" />
 
             {/* AI Smart Search Pill */}
             <button
@@ -333,6 +338,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ))}
 
                   <div className="border-t border-zinc-800 my-1.5 pt-1.5 space-y-1">
+                    <div className="px-1 py-1">
+                      <PWAInstallButton variant="banner" />
+                    </div>
                     {onOpenDownloadApps && (
                       <button
                         onClick={() => {
@@ -355,29 +363,47 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <Settings className="w-3.5 h-3.5 text-zinc-500" />
                       <span>Gestionar Cuenta Gmail</span>
                     </button>
-                    <button
-                      onClick={() => {
-                        onOpenAdmin();
-                        setShowProfileMenu(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 rounded-xl text-xs text-amber-400 hover:bg-zinc-900 flex items-center gap-2"
-                    >
-                      <Settings className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Panel de Administración</span>
-                    </button>
+                    {account.email?.toLowerCase().trim() === 'medinplayhub@gmail.com' ? (
+                      <button
+                        onClick={() => {
+                          onOpenAdmin();
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 rounded-xl text-xs text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 font-bold flex items-center gap-2"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Panel Admin (medinplayhub)</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          onOpenAdmin();
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 rounded-xl text-xs text-zinc-500 hover:bg-zinc-900 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-3.5 h-3.5 text-zinc-600" />
+                          <span>Panel de Administración</span>
+                        </div>
+                        <span className="text-[9px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">Admin Only</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Admin shortcut button */}
-            <button
-              onClick={onOpenAdmin}
-              className="p-2 rounded-full text-zinc-500 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-all hidden xl:block"
-              title="Panel de Administración"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+            {/* Admin shortcut button (Only highlighted for medinplayhub@gmail.com) */}
+            {account.email?.toLowerCase().trim() === 'medinplayhub@gmail.com' && (
+              <button
+                onClick={onOpenAdmin}
+                className="p-2 rounded-full text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all hidden xl:block"
+                title="Panel de Administración MedinPlay"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
+              </button>
+            )}
           </div>
         </div>
       </header>
