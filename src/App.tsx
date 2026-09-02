@@ -549,7 +549,6 @@ export default function App() {
           onSwitchProfile={handleSwitchProfile}
           onOpenAuth={() => setIsAuthOpen(true)}
           onOpenSearch={() => setIsAISearchOpen(true)}
-          onOpenAISearch={() => setIsAISearchOpen(true)}
           onOpenSubscription={() => setIsSubscriptionOpen(true)}
           onOpenNotifications={() => setIsNotificationsOpen(true)}
           onOpenAdmin={() => setIsAdminOpen(true)}
@@ -610,7 +609,7 @@ export default function App() {
             <RadioSection
               stations={radioStations}
               activeStation={activeRadioStation}
-              onPlayRadio={handlePlayRadio}
+              onPlayStation={handlePlayRadio}
             />
           )}
 

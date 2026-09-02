@@ -239,7 +239,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       isKids: isKidsProfile,
       isAdultUnlocked: false,
       parentalPin: isKidsProfile ? undefined : parentalPin,
-      preferredLanguage: 'Español',
       preferences: {
         preferredLanguage: 'Español',
         preferredSubtitles: 'Desactivado',

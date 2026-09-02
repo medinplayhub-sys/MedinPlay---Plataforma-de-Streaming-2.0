@@ -25,7 +25,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ mode, onModeChange, ch
         <button
           onClick={() => onModeChange('web')}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
-            mode === 'web'
+            (mode as string) === 'web'
               ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
           }`}

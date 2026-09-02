@@ -28,6 +28,7 @@ interface CommunitySectionProps {
   activeProfile: UserProfile;
   onAddReview: (review: Omit<ContentReview, 'id' | 'createdAt' | 'likesCount'>) => void;
   onCreateWatchParty: (title: string, contentId: string, hostName: string) => void;
+  onPlayItem?: (item: ContentItem) => void;
 }
 
 export const CommunitySection: React.FC<CommunitySectionProps> = ({
@@ -37,6 +38,7 @@ export const CommunitySection: React.FC<CommunitySectionProps> = ({
   activeProfile,
   onAddReview,
   onCreateWatchParty,
+  onPlayItem,
 }) => {
   const [activeTab, setActiveTab] = useState<'reviews' | 'parties' | 'share'>('reviews');
 

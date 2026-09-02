@@ -598,7 +598,7 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <MessageSquare className="w-3.5 h-3.5" /> Chat en Vivo ({item.liveViewers?.toLocaleString() || '12k'})
+                <MessageSquare className="w-3.5 h-3.5" /> Chat en Vivo ({isIPTV && 'liveViewers' in item && typeof item.liveViewers === 'number' ? item.liveViewers.toLocaleString() : '12,450'})
               </button>
             ) : isSeries ? (
               <button
@@ -714,12 +714,12 @@ export const StreamPlayerModal: React.FC<StreamPlayerModalProps> = ({
                             </p>
                           </div>
                         )}
-                        {aiCompanionData?.easterEggs && aiCompanionData.easterEggs.length > 0 && (
+                        {aiCompanionData?.suggestedFollowUps && aiCompanionData.suggestedFollowUps.length > 0 && (
                           <div>
-                            <span className="font-bold text-amber-400 block mb-0.5">Detalles Ocultos:</span>
+                            <span className="font-bold text-amber-400 block mb-0.5">Preguntas Sugeridas:</span>
                             <ul className="list-disc list-inside space-y-1 text-slate-400">
-                              {aiCompanionData.easterEggs.map((egg, i) => (
-                                <li key={i}>{egg}</li>
+                              {aiCompanionData.suggestedFollowUps.map((suggestion, i) => (
+                                <li key={i}>{suggestion}</li>
                               ))}
                             </ul>
                           </div>
