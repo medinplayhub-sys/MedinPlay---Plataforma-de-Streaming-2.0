@@ -16,8 +16,10 @@ import {
   WatchPartyRoom,
   PushNotificationItem,
   SubscriptionPlan,
+  WatchHistoryItem,
 } from './types';
 import { StorageService } from './services/storage';
+import { FirebaseService, testFirestoreConnection } from './services/firebase';
 
 // Layout & Frame
 import { DeviceFrame } from './components/layout/DeviceFrame';
@@ -47,7 +49,9 @@ export default function App() {
 
   // Domain Data State
   const [account, setAccount] = useState<UserAccount>(StorageService.getAccount());
-  const [activeProfileId, setActiveProfileId] = useState<string>(account.activeProfileId || account.profiles[0].id);
+  const [activeProfileId, setActiveProfileId] = useState<string>(
+    account.activeProfileId || account.profiles[0]?.id || 'prof-1'
+  );
   const [catalog, setCatalog] = useState<ContentItem[]>(StorageService.getCatalog());
   const [iptvChannels, setIptvChannels] = useState<IPTVChannel[]>(StorageService.getIPTVChannels());
   const [radioStations, setRadioStations] = useState<RadioStation[]>(StorageService.getRadioStations());
@@ -72,7 +76,72 @@ export default function App() {
   // Active User Profile
   const activeProfile = account.profiles.find((p) => p.id === activeProfileId) || account.profiles[0];
 
-  // Save changes to storage
+  // Initialize Firebase Auth & Firestore Synchronization
+  useEffect(() => {
+    testFirestoreConnection();
+
+    const unsubscribe = FirebaseService.onAuthStateChange(async (firebaseUser) => {
+      if (firebaseUser) {
+        const uid = firebaseUser.uid;
+        const email = firebaseUser.email || account.email;
+        const fullName = firebaseUser.displayName || email.split('@')[0];
+        const avatarUrl =
+          firebaseUser.photoURL ||
+          account.avatarUrl ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200';
+
+        try {
+          // Attempt loading existing user from cloud
+          const cloudData = await FirebaseService.loadUserData(uid);
+
+          if (cloudData && cloudData.profiles && cloudData.profiles.length > 0) {
+            setAccount((prev) => ({
+              ...prev,
+              firebaseUid: uid,
+              email: cloudData.accountData?.email || email,
+              fullName: cloudData.accountData?.fullName || fullName,
+              avatarUrl: cloudData.accountData?.avatarUrl || avatarUrl,
+              activeProfileId: cloudData.accountData?.activeProfileId || cloudData.profiles![0].id,
+              isAuthenticated: true,
+              authProvider: 'google',
+              profiles: cloudData.profiles!,
+            }));
+            if (cloudData.accountData?.activeProfileId) {
+              setActiveProfileId(cloudData.accountData.activeProfileId);
+            }
+          } else {
+            // First time sync to Firestore
+            setAccount((prev) => {
+              const updatedAccount = {
+                ...prev,
+                firebaseUid: uid,
+                email,
+                fullName,
+                avatarUrl,
+                isAuthenticated: true,
+                authProvider: 'google' as const,
+              };
+              FirebaseService.syncUserToCloud(
+                uid,
+                email,
+                fullName,
+                avatarUrl,
+                prev.profiles,
+                prev.activeProfileId
+              );
+              return updatedAccount;
+            });
+          }
+        } catch (err) {
+          console.warn('Firebase user data load fallback:', err);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Save changes to local storage
   useEffect(() => {
     StorageService.saveAccount(account);
   }, [account]);
@@ -110,10 +179,25 @@ export default function App() {
   // Profile Actions
   const handleSwitchProfile = (profileId: string) => {
     setActiveProfileId(profileId);
-    setAccount((prev) => ({ ...prev, activeProfileId: profileId }));
+    setAccount((prev) => {
+      const updated = { ...prev, activeProfileId: profileId };
+      if (prev.firebaseUid) {
+        FirebaseService.syncUserToCloud(
+          prev.firebaseUid,
+          prev.email,
+          prev.fullName,
+          prev.avatarUrl,
+          prev.profiles,
+          profileId
+        );
+      }
+      return updated;
+    });
   };
 
-  const handleAddProfile = (newProfData: Omit<UserProfile, 'id' | 'history' | 'watchlist' | 'favorites'>) => {
+  const handleAddProfile = (
+    newProfData: Omit<UserProfile, 'id' | 'history' | 'watchlist' | 'favorites'>
+  ) => {
     const newProf: UserProfile = {
       ...newProfData,
       id: 'prof-' + Date.now(),
@@ -121,49 +205,86 @@ export default function App() {
       watchlist: [],
       favorites: [],
     };
-    setAccount((prev) => ({
-      ...prev,
-      profiles: [...prev.profiles, newProf],
-    }));
+    setAccount((prev) => {
+      const updatedProfiles = [...prev.profiles, newProf];
+      if (prev.firebaseUid) {
+        FirebaseService.saveProfile(prev.firebaseUid, newProf);
+      }
+      return {
+        ...prev,
+        profiles: updatedProfiles,
+      };
+    });
   };
 
   const handleUpdateAccountEmail = (email: string, displayName: string) => {
-    setAccount((prev) => ({
-      ...prev,
-      email,
-      displayName,
-    }));
+    setAccount((prev) => {
+      const updated = {
+        ...prev,
+        email,
+        displayName,
+      };
+      if (prev.firebaseUid) {
+        FirebaseService.syncUserToCloud(
+          prev.firebaseUid,
+          email,
+          prev.fullName,
+          prev.avatarUrl,
+          prev.profiles,
+          prev.activeProfileId
+        );
+      }
+      return updated;
+    });
   };
 
-  // Watchlist & Favorites
+  // Watchlist & Favorites with Firestore Synchronization
   const handleToggleWatchlist = (contentId: string) => {
     setAccount((prev) => {
+      let currentUpdatedWatchlist: string[] = [];
       const updatedProfiles = prev.profiles.map((p) => {
         if (p.id === activeProfile.id) {
           const isWatch = p.watchlist.includes(contentId);
+          currentUpdatedWatchlist = isWatch
+            ? p.watchlist.filter((id) => id !== contentId)
+            : [...p.watchlist, contentId];
           return {
             ...p,
-            watchlist: isWatch ? p.watchlist.filter((id) => id !== contentId) : [...p.watchlist, contentId],
+            watchlist: currentUpdatedWatchlist,
           };
         }
         return p;
       });
+
+      if (prev.firebaseUid) {
+        FirebaseService.updateWatchlist(prev.firebaseUid, activeProfile.id, currentUpdatedWatchlist);
+      }
+
       return { ...prev, profiles: updatedProfiles };
     });
   };
 
   const handleToggleFavorite = (contentId: string) => {
     setAccount((prev) => {
+      let currentUpdatedFavorites: string[] = [];
       const updatedProfiles = prev.profiles.map((p) => {
         if (p.id === activeProfile.id) {
           const isFav = p.favorites.includes(contentId);
+          currentUpdatedFavorites = isFav
+            ? p.favorites.filter((id) => id !== contentId)
+            : [...p.favorites, contentId];
           return {
             ...p,
-            favorites: isFav ? p.favorites.filter((id) => id !== contentId) : [...p.favorites, contentId],
+            favorites: currentUpdatedFavorites,
           };
         }
         return p;
       });
+
+      if (prev.firebaseUid) {
+        FirebaseService.updateFavorites(prev.firebaseUid, activeProfile.id, currentUpdatedFavorites);
+      }
+
       return { ...prev, profiles: updatedProfiles };
     });
   };
@@ -176,17 +297,20 @@ export default function App() {
 
   const handleUpdateWatchProgress = (item: ContentItem, progressSec: number, totalSec: number) => {
     setAccount((prev) => {
+      let currentUpdatedHistory: WatchHistoryItem[] = [];
       const updatedProfiles = prev.profiles.map((p) => {
         if (p.id === activeProfile.id) {
           const existingHistoryIdx = p.history.findIndex((h) => h.contentId === item.id);
-          const historyEntry = {
+          const historyEntry: WatchHistoryItem = {
             contentId: item.id,
+            contentType: item.type === 'series' ? 'series' : 'movie',
             title: item.title,
             posterUrl: item.posterUrl,
             backdropUrl: item.backdropUrl,
             progressSeconds: progressSec,
             totalDurationSeconds: totalSec,
             lastWatchedAt: new Date().toISOString(),
+            completed: progressSec / (totalSec || 1) >= 0.9,
           };
 
           let newHistory = [...p.history];
@@ -195,10 +319,16 @@ export default function App() {
           } else {
             newHistory.unshift(historyEntry);
           }
+          currentUpdatedHistory = newHistory;
           return { ...p, history: newHistory };
         }
         return p;
       });
+
+      if (prev.firebaseUid) {
+        FirebaseService.updateWatchHistory(prev.firebaseUid, activeProfile.id, currentUpdatedHistory);
+      }
+
       return { ...prev, profiles: updatedProfiles };
     });
   };
@@ -291,18 +421,51 @@ export default function App() {
   const handleAddRadio = (st: RadioStation) => setRadioStations((prev) => [st, ...prev]);
   const handleDeleteRadio = (id: string) => setRadioStations((prev) => prev.filter((s) => s.id !== id));
 
-  // User Auth Actions
-  const handleLoginSuccess = (email: string, fullName: string) => {
-    setAccount((prev) => ({
-      ...prev,
-      email,
-      fullName,
-      isAuthenticated: true,
-      authProvider: email.includes('gmail') ? 'google' : 'email',
-    }));
+  // User Auth Actions with Firebase Real-Time Synchronization
+  const handleLoginSuccess = (
+    email: string,
+    fullName: string,
+    avatarUrl?: string,
+    firebaseUid?: string
+  ) => {
+    const effectiveAvatar =
+      avatarUrl ||
+      account.avatarUrl ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200';
+    const effectiveUid = firebaseUid || account.firebaseUid || 'usr-' + Date.now();
+
+    setAccount((prev) => {
+      const updated = {
+        ...prev,
+        firebaseUid: effectiveUid,
+        email,
+        fullName,
+        avatarUrl: effectiveAvatar,
+        isAuthenticated: true,
+        authProvider: (email.includes('gmail') || firebaseUid ? 'google' : 'email') as 'google' | 'email',
+      };
+
+      if (effectiveUid) {
+        FirebaseService.syncUserToCloud(
+          effectiveUid,
+          email,
+          fullName,
+          effectiveAvatar,
+          prev.profiles,
+          prev.activeProfileId
+        );
+      }
+
+      return updated;
+    });
   };
 
-  const handleRegisterSuccess = (email: string, fullName: string, avatarUrl: string) => {
+  const handleRegisterSuccess = (
+    email: string,
+    fullName: string,
+    avatarUrl: string,
+    firebaseUid?: string
+  ) => {
     const newMainProfile: UserProfile = {
       id: 'prof-' + Date.now(),
       name: `${fullName} (Principal)`,
@@ -323,23 +486,42 @@ export default function App() {
       },
     };
 
-    setAccount((prev) => ({
-      ...prev,
-      email,
-      fullName,
-      avatarUrl,
-      isAuthenticated: true,
-      authProvider: 'email',
-      activeProfileId: newMainProfile.id,
-      profiles: [newMainProfile, ...prev.profiles.filter((p) => p.isKids)],
-    }));
+    const effectiveUid = firebaseUid || 'usr-' + Date.now();
+    const updatedProfiles = [newMainProfile, ...account.profiles.filter((p) => p.isKids)];
+
+    setAccount((prev) => {
+      const updated = {
+        ...prev,
+        firebaseUid: effectiveUid,
+        email,
+        fullName,
+        avatarUrl,
+        isAuthenticated: true,
+        authProvider: (email.includes('gmail') || firebaseUid ? 'google' : 'email') as 'google' | 'email',
+        activeProfileId: newMainProfile.id,
+        profiles: updatedProfiles,
+      };
+
+      FirebaseService.syncUserToCloud(
+        effectiveUid,
+        email,
+        fullName,
+        avatarUrl,
+        updatedProfiles,
+        newMainProfile.id
+      );
+
+      return updated;
+    });
     setActiveProfileId(newMainProfile.id);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await FirebaseService.logout();
     setAccount((prev) => ({
       ...prev,
       isAuthenticated: false,
+      firebaseUid: undefined,
     }));
   };
 
@@ -358,15 +540,15 @@ export default function App() {
           activeProfile={activeProfile}
           onSwitchProfile={handleSwitchProfile}
           onOpenAuth={() => setIsAuthOpen(true)}
-          onOpenSearch={() => setIsAISearchOpen(true)}
-          onOpenNotifications={() => setIsNotificationsOpen(true)}
+          onOpenAISearch={() => setIsAISearchOpen(true)}
           onOpenSubscription={() => setIsSubscriptionOpen(true)}
+          onOpenNotifications={() => setIsNotificationsOpen(true)}
           onOpenAdmin={() => setIsAdminOpen(true)}
           unreadNotificationsCount={unreadNotificationsCount}
         />
 
-        {/* Main Section Content Area */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-4 pb-20 lg:pb-8">
+        {/* Dynamic Section Rendering */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6">
           {activeSection === 'home' && (
             <HomeSection
               catalog={catalog}
@@ -384,9 +566,9 @@ export default function App() {
 
           {activeSection === 'movies' && (
             <MoviesSeriesSection
-              catalog={catalog}
+              type="movies"
+              catalog={catalog.filter((c) => c.type === 'movie')}
               activeProfile={activeProfile}
-              filterType="movie"
               onPlayItem={handlePlayItem}
               onToggleWatchlist={handleToggleWatchlist}
               onToggleFavorite={handleToggleFavorite}
@@ -395,9 +577,9 @@ export default function App() {
 
           {activeSection === 'series' && (
             <MoviesSeriesSection
-              catalog={catalog}
+              type="series"
+              catalog={catalog.filter((c) => c.type === 'series')}
               activeProfile={activeProfile}
-              filterType="series"
               onPlayItem={handlePlayItem}
               onToggleWatchlist={handleToggleWatchlist}
               onToggleFavorite={handleToggleFavorite}
@@ -416,18 +598,18 @@ export default function App() {
             <RadioSection
               stations={radioStations}
               activeStation={activeRadioStation}
-              onPlayStation={handlePlayRadio}
+              onPlayRadio={handlePlayRadio}
             />
           )}
 
-          {activeSection === 'adult18' && (
+          {activeSection === 'adult' && (
             <Adult18Section
               catalog={catalog}
               iptvChannels={iptvChannels}
               activeProfile={activeProfile}
+              onPlayItem={handlePlayItem}
               onUnlockAdult={handleUnlockAdult}
               onLockAdult={handleLockAdult}
-              onPlayItem={handlePlayItem}
             />
           )}
 
@@ -439,33 +621,41 @@ export default function App() {
               activeProfile={activeProfile}
               onAddReview={handleAddReview}
               onCreateWatchParty={handleCreateWatchParty}
+              onPlayItem={handlePlayItem}
             />
           )}
         </main>
 
-        {/* Persistent Floating Live Radio Player */}
-        <RadioFloatingPlayer
-          station={activeRadioStation}
-          onClose={() => setActiveRadioStation(null)}
-          onOpenRadioSection={() => setActiveSection('radio')}
-        />
+        {/* Global Floating Radio Player (Continuous Background Audio) */}
+        {activeRadioStation && (
+          <RadioFloatingPlayer
+            station={activeRadioStation}
+            onClose={() => setActiveRadioStation(null)}
+          />
+        )}
 
-        {/* Video & IPTV Stream Player Modal */}
-        <StreamPlayerModal
-          item={activeStreamItem}
-          isOpen={isPlayerOpen}
-          onClose={() => setIsPlayerOpen(false)}
-          activeProfile={activeProfile}
-          catalog={catalog}
-          onPlayItem={handlePlayItem}
-          onUpdateWatchProgress={handleUpdateWatchProgress}
-          onToggleWatchlist={handleToggleWatchlist}
-          onToggleFavorite={handleToggleFavorite}
-          isFavorite={activeStreamItem ? activeProfile.favorites.includes(activeStreamItem.id) : false}
-          isWatchlisted={activeStreamItem ? activeProfile.watchlist.includes(activeStreamItem.id) : false}
-        />
+        {/* Universal Stream Player Modal (Movies, Series, IPTV, DASH, HLS, MP4, YouTube) */}
+        {isPlayerOpen && activeStreamItem && (
+          <StreamPlayerModal
+            item={activeStreamItem}
+            activeProfile={activeProfile}
+            allCatalog={catalog}
+            onClose={() => {
+              setIsPlayerOpen(false);
+              setActiveStreamItem(null);
+            }}
+            onUpdateProgress={(progressSec, totalSec) => {
+              if ('type' in activeStreamItem && activeStreamItem.type !== undefined) {
+                handleUpdateWatchProgress(activeStreamItem as ContentItem, progressSec, totalSec);
+              }
+            }}
+            onSelectRelated={(relatedItem) => {
+              setActiveStreamItem(relatedItem);
+            }}
+          />
+        )}
 
-        {/* AI Semantic Search Modal */}
+        {/* AI Neural Curator & Search Modal */}
         <AISearchModal
           isOpen={isAISearchOpen}
           onClose={() => setIsAISearchOpen(false)}
@@ -506,7 +696,8 @@ export default function App() {
           onMarkAsRead={handleMarkNotificationRead}
           onClearAll={handleClearAllNotifications}
           onSelectNotificationItem={(contentId) => {
-            const found = catalog.find((c) => c.id === contentId) || iptvChannels.find((ch) => ch.id === contentId);
+            const found =
+              catalog.find((c) => c.id === contentId) || iptvChannels.find((ch) => ch.id === contentId);
             if (found) handlePlayItem(found);
           }}
         />

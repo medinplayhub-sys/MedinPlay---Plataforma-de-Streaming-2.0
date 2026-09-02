@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'fullName']) &&
+        data.email is string && data.email.size() <= 150 &&
+        data.fullName is string && data.fullName.size() <= 100;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['name', 'avatarUrl']) &&
+        data.name is string && data.name.size() <= 80 &&
+        data.avatarUrl is string && data.avatarUrl.size() <= 500;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(request.resource.data);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Profiles Subcollection
+      match /profiles/{profileId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(profileId) && isValidUserProfile(request.resource.data);
+        allow update: if isOwner(userId) && isValidId(profileId) && isValidUserProfile(request.resource.data);
+        allow delete: if isOwner(userId) && isValidId(profileId);
+      }
+    }
+  }
+}

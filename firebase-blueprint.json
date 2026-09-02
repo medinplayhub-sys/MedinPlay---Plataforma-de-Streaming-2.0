@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents an authenticated user account in MedinPlay",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 150 },
+        "fullName": { "type": "string", "maxLength": 100 },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "activeProfileId": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "fullName"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User sub-profile with specific watchlist, favorites, and watch history",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 80 },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "isKids": { "type": "boolean" },
+        "isAdultUnlocked": { "type": "boolean" },
+        "parentalPin": { "type": "string", "maxLength": 10 },
+        "watchlist": { "type": "array" },
+        "favorites": { "type": "array" },
+        "history": { "type": "array" },
+        "customPlaylists": { "type": "array" },
+        "preferences": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "avatarUrl"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User root document storing core credentials and profile references"
+    },
+    "/users/{userId}/profiles/{profileId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Subcollection of profiles for the user with personalized history and watchlist"
+    }
+  }
+}

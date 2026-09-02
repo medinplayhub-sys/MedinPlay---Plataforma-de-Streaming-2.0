@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ContentItem,
   IPTVChannel,
@@ -7,10 +7,8 @@ import {
 } from '../../types';
 import {
   Play,
-  Info,
   Bookmark,
   Heart,
-  Star,
   Tv,
   Radio,
   Sparkles,
@@ -18,10 +16,9 @@ import {
   TrendingUp,
   Clock,
   ChevronRight,
-  ShieldAlert,
   Flame,
-  Volume2,
   Check,
+  Film,
 } from 'lucide-react';
 
 interface HomeSectionProps {
@@ -57,7 +54,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
   const heroItem = safeCatalog.find((i) => i.isExclusive) || safeCatalog[0];
 
   // Continue watching items from profile history
-  const continueWatching = activeProfile.history.slice(0, 4);
+  const continueWatching = activeProfile.history.slice(0, 6);
 
   // Trending items
   const trendingItems = safeCatalog.filter((i) => i.isTrending);
@@ -69,10 +66,143 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
   const isFavorited = (id: string) => activeProfile.favorites.includes(id);
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* Hero Showcase Banner */}
+    <div className="space-y-6 pb-16">
+      {/* 1. Direct Access Quick Nav Badges & Hub Shortcuts */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <button
+          onClick={() => onOpenSection('movies')}
+          className="group flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 hover:border-amber-500/50 transition-all text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <Flame className="w-4 h-4 fill-current" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">Tendencias</span>
+              <span className="text-[10px] text-zinc-400 font-mono">4K UHD & Estrenos</span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-amber-400 transition-colors" />
+        </button>
+
+        <button
+          onClick={() => onOpenSection('iptv')}
+          className="group flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-red-500/10 to-transparent border border-red-500/20 hover:border-red-500/50 transition-all text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
+              <Tv className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">Canales IPTV</span>
+              <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                {safeIPTV.length} En Vivo
+              </span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
+        </button>
+
+        <button
+          onClick={() => onOpenSection('radio')}
+          className="group flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-blue-500/10 to-transparent border border-blue-500/20 hover:border-blue-500/50 transition-all text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+              <Radio className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">Radio HD</span>
+              <span className="text-[10px] text-zinc-400 font-mono">{radioStations.length} Emisoras</span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-blue-400 transition-colors" />
+        </button>
+
+        <button
+          onClick={onOpenAISearch}
+          className="group flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-indigo-500/10 to-transparent border border-indigo-500/20 hover:border-indigo-500/50 transition-all text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">Curador IA</span>
+              <span className="text-[10px] text-zinc-400 font-mono">Búsqueda Neural</span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-indigo-400 transition-colors" />
+        </button>
+      </div>
+
+      {/* 2. Top Compact Continue Watching Carousel */}
+      {continueWatching.length > 0 && (
+        <div className="space-y-2.5 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-3.5 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Continuar Viendo ({activeProfile.name})</span>
+            </div>
+            <span className="text-[10px] text-zinc-400 font-mono">{continueWatching.length} títulos en progreso</span>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+            {continueWatching.map((hItem) => {
+              const fullItem = catalog.find((c) => c.id === hItem.contentId);
+              const progressPct = Math.min(
+                100,
+                Math.round((hItem.progressSeconds / (hItem.totalDurationSeconds || 1)) * 100)
+              );
+
+              return (
+                <div
+                  key={hItem.contentId}
+                  onClick={() => fullItem && onPlayItem(fullItem)}
+                  className="group relative flex-shrink-0 w-64 sm:w-72 bg-[#0a0d14] border border-zinc-800 hover:border-amber-500/50 rounded-xl overflow-hidden shadow-md transition-all cursor-pointer flex gap-2.5 p-2"
+                >
+                  <div className="relative w-24 h-16 rounded-lg overflow-hidden bg-zinc-950 shrink-0">
+                    <img
+                      src={hItem.backdropUrl || hItem.posterUrl}
+                      alt={hItem.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <Play className="w-4 h-4 text-white fill-current" />
+                    </div>
+                    {/* Amber Progress Bar */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-800">
+                      <div className="h-full bg-amber-500" style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    <div>
+                      <h4 className="text-xs font-bold text-white truncate group-hover:text-amber-400 transition-colors">
+                        {hItem.title}
+                      </h4>
+                      <p className="text-[10px] text-zinc-400 truncate">
+                        {hItem.episodeTitle || `${progressPct}% visto`}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px]">
+                      <span className="text-zinc-500 font-mono">
+                        {Math.floor(hItem.progressSeconds / 60)} min
+                      </span>
+                      <span className="text-amber-400 font-bold">Reanudar →</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Redesigned Compact Hero Banner (Max 350px height) */}
       {heroItem && (
-        <div className="relative w-full h-[500px] sm:h-[560px] lg:h-[600px] rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl bg-black">
+        <div className="relative w-full h-[300px] sm:h-[340px] md:h-[350px] max-h-[350px] rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl bg-black">
           {/* Backdrop Image */}
           <img
             src={heroItem.backdropUrl}
@@ -81,17 +211,17 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
           />
 
           {/* Gradient Masks */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/50 to-transparent z-10" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/40 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/50 to-transparent z-10" />
 
           {/* Hero Content Overlay */}
-          <div className="relative z-20 h-full flex flex-col justify-end p-6 sm:p-10 max-w-2xl space-y-4">
+          <div className="relative z-20 h-full flex flex-col justify-end p-5 sm:p-7 max-w-2xl space-y-2.5">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded uppercase tracking-wider">
+              <span className="px-2 py-0.5 bg-red-600 text-white text-[9px] font-bold rounded uppercase tracking-wider">
                 Exclusivo
               </span>
-              <span className="text-xs text-zinc-400 font-medium">
+              <span className="text-[11px] text-zinc-300 font-mono bg-zinc-900/80 px-2 py-0.5 rounded border border-zinc-800">
                 {heroItem.matchPercentage}% AI Match
               </span>
               <span className="px-2 py-0.5 bg-zinc-800/80 border border-zinc-700 text-zinc-300 text-[10px] font-semibold rounded">
@@ -103,24 +233,27 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl sm:text-6xl font-serif italic font-bold text-white tracking-tight leading-tight drop-shadow-xl">
+            <h1 className="text-2xl sm:text-4xl font-serif italic font-bold text-white tracking-tight leading-tight drop-shadow-xl truncate">
               {heroItem.title}
             </h1>
 
-            {/* Synopsis */}
-            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed line-clamp-3 max-w-xl drop-shadow">
+            {/* Synopsis (Compact 2 lines) */}
+            <p className="text-xs text-zinc-300 leading-relaxed line-clamp-2 max-w-xl drop-shadow">
               {heroItem.synopsis}
             </p>
 
             {/* Genres & Details */}
-            <div className="flex flex-wrap items-center gap-2.5 text-xs text-zinc-400">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
               <span className="font-mono">{heroItem.year}</span>
               <span>•</span>
               <span>{heroItem.duration || `${heroItem.seasonsCount} Temporadas`}</span>
               <span>•</span>
-              <div className="flex items-center gap-1.5">
-                {heroItem.genre.map((g) => (
-                  <span key={g} className="bg-zinc-900/80 border border-zinc-800 px-2 py-0.5 rounded text-zinc-300 text-[11px]">
+              <div className="flex items-center gap-1">
+                {heroItem.genre.slice(0, 3).map((g) => (
+                  <span
+                    key={g}
+                    className="bg-zinc-900/80 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 text-[10px]"
+                  >
                     {g}
                   </span>
                 ))}
@@ -128,18 +261,18 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
               <button
                 onClick={() => onPlayItem(heroItem)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-zinc-200 text-black rounded-full font-bold text-sm shadow-xl transition-all"
+                className="flex items-center gap-2 px-5 py-2 bg-white hover:bg-zinc-200 text-black rounded-full font-bold text-xs shadow-xl transition-all"
               >
-                <Play className="w-4 h-4 fill-current ml-0.5" />
+                <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                 <span>Ver Ahora</span>
               </button>
 
               <button
                 onClick={() => onToggleWatchlist(heroItem.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all backdrop-blur ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all backdrop-blur ${
                   isWatchlisted(heroItem.id)
                     ? 'bg-zinc-800 text-amber-400 border border-amber-500/40'
                     : 'bg-zinc-800/80 hover:bg-zinc-700 text-white border border-zinc-700'
@@ -147,12 +280,12 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
               >
                 {isWatchlisted(heroItem.id) ? (
                   <>
-                    <Check className="w-4 h-4 text-amber-400" />
+                    <Check className="w-3.5 h-3.5 text-amber-400" />
                     <span>En Mi Lista</span>
                   </>
                 ) : (
                   <>
-                    <Bookmark className="w-4 h-4" />
+                    <Bookmark className="w-3.5 h-3.5" />
                     <span>+ Mi Lista</span>
                   </>
                 )}
@@ -160,75 +293,21 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
 
               <button
                 onClick={() => onToggleFavorite(heroItem.id)}
-                className={`p-2.5 rounded-full border transition-all ${
+                className={`p-2 rounded-full border transition-all ${
                   isFavorited(heroItem.id)
                     ? 'bg-red-500/20 border-red-500 text-red-400'
                     : 'bg-zinc-800/80 hover:bg-zinc-700 border-zinc-700 text-zinc-300'
                 }`}
                 title="Favorito"
               >
-                <Heart className={`w-4 h-4 ${isFavorited(heroItem.id) ? 'fill-current' : ''}`} />
+                <Heart className={`w-3.5 h-3.5 ${isFavorited(heroItem.id) ? 'fill-current' : ''}`} />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Continue Watching Section */}
-      {continueWatching.length > 0 && (
-        <section className="space-y-3">
-          <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold px-1">
-            Continuar Viendo ({activeProfile.name})
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {continueWatching.map((hItem) => {
-              const fullItem = catalog.find((c) => c.id === hItem.contentId);
-              const progressPct = Math.min(100, Math.round((hItem.progressSeconds / (hItem.totalDurationSeconds || 1)) * 100));
-
-              return (
-                <div
-                  key={hItem.contentId}
-                  onClick={() => fullItem && onPlayItem(fullItem)}
-                  className="group relative bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 rounded-2xl overflow-hidden shadow-lg transition-all cursor-pointer"
-                >
-                  <div className="relative aspect-video w-full overflow-hidden bg-zinc-950">
-                    <img
-                      src={hItem.backdropUrl || hItem.posterUrl}
-                      alt={hItem.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
-                      </div>
-                    </div>
-                    {/* Amber Progress Bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-800">
-                      <div
-                        className="h-full bg-amber-500"
-                        style={{ width: `${progressPct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3.5">
-                    <h3 className="text-xs font-bold text-white truncate group-hover:text-amber-400 transition-colors">
-                      {hItem.title}
-                    </h3>
-                    <div className="flex items-center justify-between text-[10px] text-zinc-500 mt-1">
-                      <span>{hItem.episodeTitle ? `${hItem.episodeTitle}` : `${progressPct}% completado`}</span>
-                      <span className="text-amber-400 font-mono">Reanudar</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* AI Smart Curated Section */}
+      {/* 4. AI Smart Curated Section */}
       <section className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-5 sm:p-7 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -292,7 +371,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
         </div>
       </section>
 
-      {/* Top IPTV Live Channels Preview */}
+      {/* 5. Top IPTV Live Channels Preview */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold px-1 flex items-center gap-2">
@@ -354,7 +433,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
         </div>
       </section>
 
-      {/* Live Radio Stations Section */}
+      {/* 6. Live Radio Stations Section */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold px-1 flex items-center gap-2">
@@ -398,7 +477,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
         </div>
       </section>
 
-      {/* Trending VOD Catalog */}
+      {/* 7. Trending VOD Catalog */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold px-1 flex items-center gap-2">

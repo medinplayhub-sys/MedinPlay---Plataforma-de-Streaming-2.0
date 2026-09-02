@@ -176,6 +176,7 @@ export interface DeviceInfo {
 }
 
 export interface UserAccount {
+  firebaseUid?: string;
   email: string;
   fullName: string;
   displayName?: string;
