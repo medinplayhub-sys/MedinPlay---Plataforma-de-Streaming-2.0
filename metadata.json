@@ -1,0 +1,6 @@
+{
+  "name": "MedinPlay - Plataforma de Streaming, IPTV, Radio y VOD",
+  "description": "Plataforma de streaming integral MedinPlay para Web, Android, iOS y Smart TV con películas, series VOD, canales IPTV en vivo de baja latencia, radio, IA integrada, perfiles Gmail y panel de administración.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
