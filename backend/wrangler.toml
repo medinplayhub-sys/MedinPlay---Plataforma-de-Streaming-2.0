@@ -1,0 +1,14 @@
+name = "medinplay-backend"
+main = "src/index.ts"
+compatibility_date = "2026-09-08"
+
+# Enlace a la Base de Datos Serverless Cloudflare D1
+[[d1_databases]]
+binding = "DB"
+database_name = "medinplay-db"
+database_id = "xxxx-xxxx-xxxx-xxxx" # Se genera al ejecutar 'npx wrangler d1 create medinplay-db'
+
+# Enlace al Almacenamiento de Objetos para APKs, Banners y Pósters
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "medinplay-storage"

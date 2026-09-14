@@ -1,0 +1,22 @@
+# Dependencias de Node / JavaScript
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Cloudflare / Wrangler builds
+.wrangler/
+dist/
+.dev.vars
+
+# Flutter / Android
+.dart_tool/
+.idea/
+.vscode/
+*.iml
+build/
+android/.gradle
+android/app/build
+
+# Entorno y Secretos
+.env
+*.pem

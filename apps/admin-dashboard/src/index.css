@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-medin-dark: #0B0A10;
+  --color-medin-purple: #1E1233;
+  --color-medin-deepPurple: #0F051D;
+  --color-medin-gold: #D4AF37;
+  --color-medin-goldLight: #FFE57F;
+  --color-medin-gray: #2A2638;
+  --color-medin-textMuted: #8A859E;
+}
+
+body {
+  background-color: #0B0A10;
+  color: #FFFFFF;
+  font-family: system-ui, -apple-system, sans-serif;
+}
