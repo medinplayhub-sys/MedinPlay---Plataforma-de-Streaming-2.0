@@ -1,12 +1,24 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    /* Paleta Medin Play: Dorado - Morado - Negro - Blanco */
+    --color-gold-primary: #D4AF37;
+    --color-gold-bright: #F4C430;
+    --color-purple-royal: #6B21A8;
+    --color-purple-intense: #9333EA;
+    --color-black-deep: #050505;
+    --color-black-soft: #0d0d0d;
+    --color-white-pure: #FFFFFF;
+    --color-white-smoke: #F5F5F5;
+  }
+
   * {
-    border-color: #27272a; /* zinc-800 */
+    border-color: #27272a;
   }
   body {
-    background-color: #050505;
-    color: #e0e0e0;
+    background-color: var(--color-black-deep);
+    color: var(--color-white-smoke);
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -43,7 +55,7 @@
 
 /* Sophisticated Dark panels */
 .dark-panel {
-  background: #0d0d0d;
+  background: var(--color-black-soft);
   border: 1px solid #27272a;
 }
 
@@ -58,6 +70,28 @@
   background: rgba(24, 24, 27, 0.6);
   backdrop-filter: blur(12px);
   border: 1px solid #27272a;
+}
+
+/* Gradientes Signature MedinPlay */
+.gradient-gold {
+  background: linear-gradient(135deg, #D4AF37 0%, #F4C430 50%, #D4AF37 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #6B21A8 0%, #9333EA 100%);
+}
+
+.gradient-premium {
+  background: linear-gradient(135deg, #D4AF37 0%, #9333EA 100%);
+}
+
+/* Glows */
+.glow-gold {
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+}
+
+.glow-purple {
+  box-shadow: 0 0 30px rgba(147, 51, 234, 0.4);
 }
 
 .glow-amber {

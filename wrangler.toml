@@ -1,0 +1,39 @@
+# Configuración de Cloudflare Pages para Medin Play
+# Este archivo define la configuración del proyecto para Workers y Pages
+
+name = "medin-play"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Variables de entorno para producción
+[vars]
+ENVIRONMENT = "production"
+APP_NAME = "Medin Play"
+
+# Configuración de D1 (Base de datos)
+# Descomenta y configura cuando tengas tu base de datos creada
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "medin-play-db"
+# database_id = "TU_DATABASE_ID_AQUI"
+
+# Configuración de R2 (Almacenamiento para APK y respaldos)
+# Descomenta y configura cuando tengas tu bucket creado
+# [[r2_buckets]]
+# binding = "BUCKET"
+# bucket_name = "medin-play-assets"
+
+# Configuración de Pages
+[site]
+bucket = "./dist"
+entry-point = "."
+
+# Build settings para Cloudflare Pages
+[build]
+command = "npm run build"
+output_directory = "dist"
+
+# Environment variables para desarrollo
+[dev]
+port = 5173
+local_protocol = "http"
